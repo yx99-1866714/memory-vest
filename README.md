@@ -26,7 +26,7 @@ The core experience of MemoryVest is designed around a natural language assistan
 2. **Start chatting**
    Enter the chat loop. The assistant will parse your natural language sentences and automatically update your profile, portfolio, and cash balance under the hood. 
    ```bash
-   uv run memoryvest chat --user-id "my_username"
+   uv run memoryvest chat --user-id "user_001"
    ```
 
 ### Chat Examples
@@ -46,6 +46,11 @@ You can tell the assistant any combination of facts:
     > "Can you watch AMD for me? Let me know if it dips below 135."
 
 ## Explicit Commands
+
+You must provide a `--user-id` for every command to interact with the system. You can list all stored user IDs using:
+```bash
+uv run memoryvest --list-users
+```
 
 If you prefer to skip the chat layer and operate the daily report manually, you can use the report generation commands:
 

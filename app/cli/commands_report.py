@@ -13,7 +13,7 @@ app = typer.Typer()
 console = Console()
 
 @app.command("preview")
-def preview_report(user_id: str = typer.Option("user_001", help="User ID to generate report for")):
+def preview_report(user_id: str = typer.Option(..., help="User ID to generate report for")):
     """Preview the daily personalized report for a user."""
     with console.status("[bold green]Generating Report Preview...") as status:
         profile = ProfileService().get_profile(user_id)
@@ -48,7 +48,7 @@ def preview_report(user_id: str = typer.Option("user_001", help="User ID to gene
     console.print(report)
 
 @app.command("send")
-def send_report(user_id: str = typer.Option("user_001", help="User ID to send report to")):
+def send_report(user_id: str = typer.Option(..., help="User ID to send report to")):
     """Email the daily personalized report for a user."""
     profile = ProfileService().get_profile(user_id)
     if not profile or not profile.email:

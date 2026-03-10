@@ -2,6 +2,7 @@ from typing import List, Dict, Any
 import uuid
 from datetime import datetime, timezone
 from app.infra.evermemos_client import EverMemOSClient
+import logging
 
 class MemoryService:
     def __init__(self):
@@ -51,12 +52,19 @@ class MemoryService:
                 retrieve_method="hybrid",
                 top_k=5
             )
-            # Extrapolate context string
-            memories = res.get("result", {}).get("memories", [])
-            if not memories:
+            memories_raw = res.get("result", {}).get("memories", [])
+            extracted_texts = []
+            for mem_group in memories_raw:
+                for group_id, memory_items in mem_group.items():
+                    for mem in memory_items:
+                        text = mem.get("episode") or mem.get("summary") or str(mem)
+                        extracted_texts.append(text)
+                        
+            if not extracted_texts:
                 return "No recent conversational context."
-            return "\n".join(memories)
+            return "\n".join(extracted_texts)
         except Exception as e:
+            logging.error(f"Error retrieving episodic context from EverMemOS: {e}")
             return f"Error retrieving context: {e}"
 
     def search_foresight_context(self, user_id: str) -> str:
@@ -71,9 +79,17 @@ class MemoryService:
                 retrieve_method="hybrid",
                 top_k=5
             )
-            memories = res.get("result", {}).get("memories", [])
-            if not memories:
+            memories_raw = res.get("result", {}).get("memories", [])
+            extracted_texts = []
+            for mem_group in memories_raw:
+                for group_id, memory_items in mem_group.items():
+                    for mem in memory_items:
+                        text = mem.get("episode") or mem.get("summary") or str(mem)
+                        extracted_texts.append(text)
+                        
+            if not extracted_texts:
                 return "No future foresight intents."
-            return "\n".join(memories)
+            return "\n".join(extracted_texts)
         except Exception as e:
+            logging.error(f"Error retrieving foresight context from EverMemOS: {e}")
             return f"Error retrieving foresight: {e}"

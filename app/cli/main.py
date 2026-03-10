@@ -18,8 +18,37 @@ app.add_typer(commands_report.app, name="report", help="Report generation and de
 
 console = Console()
 
+def list_users_callback(value: bool):
+    if value:
+        import sqlite3
+        from app.config import settings
+        from pathlib import Path
+        db_path = Path(settings.db_path)
+        if db_path.exists():
+            conn = sqlite3.connect(str(db_path))
+            c = conn.cursor()
+            try:
+                c.execute("SELECT user_id FROM profiles")
+                users = c.fetchall()
+                if users:
+                    console.print("[bold green]Stored User IDs:[/bold green]")
+                    for u in users:
+                        console.print(f" - {u[0]}")
+                else:
+                    console.print("No users found. Start chatting to create one.")
+            except Exception:
+                console.print("Database not initialized yet.")
+            finally:
+                conn.close()
+        else:
+            console.print("Database not initialized yet.")
+        raise typer.Exit()
+
 @app.callback()
-def main_callback(verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging")):
+def main_callback(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging"),
+    list_users: bool = typer.Option(False, "--list-users", callback=list_users_callback, is_eager=True, help="List all locally stored user IDs")
+):
     """MemoryVest - Beginner-friendly investing companion powered by EverMemOS"""
     log_level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(
@@ -31,12 +60,44 @@ def main_callback(verbose: bool = typer.Option(False, "--verbose", "-v", help="E
 
 @app.command()
 def init():
-    """Initialize the SQLite database schema."""
+    """Initialize the SQLite database schema and clear existing data."""
+    from app.config import settings
+    from pathlib import Path
+    import sqlite3
+    from app.infra.evermemos_client import EverMemOSClient
+    
+    db_path = Path(settings.db_path)
+    client = EverMemOSClient()
+    
+    if db_path.exists():
+        try:
+            conn = sqlite3.connect(str(db_path))
+            c = conn.cursor()
+            # Check if profiles table exists to avoid errors on corrupt/empty DBs
+            c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='profiles'")
+            if c.fetchone():
+                c.execute("SELECT user_id FROM profiles")
+                users = [row[0] for row in c.fetchall()]
+                
+                if users:
+                    with console.status("[cyan]Clearing EverMemOS remote memories..."):
+                        for u in users:
+                            try:
+                                client.delete_all_user_memories(u)
+                                console.print(f"[dim]Cleared remote memories for {u}[/dim]")
+                            except Exception as e:
+                                console.print(f"[red]Failed to clear remote memories for {u} (Error: {e})[/red]")
+            conn.close()
+            db_path.unlink()
+            console.print("[dim]Existing local database file removed.[/dim]")
+        except Exception as e:
+            console.print(f"[yellow]Could not cleanly wipe existing database: {e}[/yellow]")
+            
     init_db()
     typer.echo("MemoryVest database initialized. You can now start chatting.")
 
 @app.command()
-def chat(user_id: str = typer.Option("user_001", help="User ID session")):
+def chat(user_id: str = typer.Option(..., help="User ID session")):
     """Start an interactive chat loop."""
     console.print(f"[bold green]Starting MemoryVest chat for {user_id}... (type 'exit' to quit)[/bold green]")
     

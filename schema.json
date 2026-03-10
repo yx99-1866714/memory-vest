@@ -1,0 +1,84 @@
+{
+  "properties": {
+    "event_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Event Id",
+      "description": "Memory event_id (filter condition)",
+      "default": "__all__",
+      "examples": [
+        "507f1f77bcf86cd799439011",
+        "__all__"
+      ]
+    },
+    "user_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "User Id",
+      "description": "User ID (filter condition)",
+      "default": "__all__",
+      "examples": [
+        "user_123",
+        "__all__"
+      ]
+    },
+    "group_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Group Id",
+      "description": "Group ID (filter condition)",
+      "default": "__all__",
+      "examples": [
+        "group_456",
+        "__all__"
+      ]
+    }
+  },
+  "type": "object",
+  "title": "DeleteMemoriesRequest",
+  "description": "Delete memories request body\n\nUsed for DELETE /api/v1/memories endpoint\n\nNotes:\n- event_id, user_id, group_id are combined filter conditions\n- If all three are provided, all conditions must be met\n- If not provided, use MAGIC_ALL (\"__all__\") to skip filtering\n- Cannot all be MAGIC_ALL (at least one filter required)",
+  "examples": [
+    {
+      "summary": "Delete by event_id only",
+      "value": {
+        "event_id": "507f1f77bcf86cd799439011",
+        "group_id": "__all__",
+        "user_id": "__all__"
+      }
+    },
+    {
+      "summary": "Delete by user_id only",
+      "value": {
+        "event_id": "__all__",
+        "group_id": "__all__",
+        "user_id": "user_123"
+      }
+    },
+    {
+      "summary": "Delete by user_id and group_id",
+      "value": {
+        "event_id": "__all__",
+        "group_id": "group_456",
+        "user_id": "user_123"
+      }
+    }
+  ]
+}
