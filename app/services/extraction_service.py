@@ -23,6 +23,38 @@ class ExtractionService:
         with open(prompt_path, "r", encoding="utf-8") as f:
             self.prompt_template = f.read()
 
+    def generate_welcome_message(self, current_profile: UserProfile, current_positions: list, memory_context: str) -> str:
+        """
+        Generates a personalized welcome message summarizing the last conversation.
+        """
+        if not self.client:
+            return "Welcome back!"
+            
+        prompt = f"""You are MemoryVest, a personalized investing companion.
+The user is returning to chat. Generate a short, friendly greeting.
+If there are memories from previous conversations or current holdings, briefly summarize them and mention any action items (like watching a stock).
+Keep it under 3-4 sentences. Include no markdown. Provide just the text response.
+
+Profile: {json.dumps(current_profile.model_dump(mode='json')) if current_profile else 'None'}
+Positions: {json.dumps([p.model_dump(mode='json') for p in current_positions]) if current_positions else 'None'}
+Recent Memories:
+{memory_context}
+"""
+        try:
+            logging.debug(f"Welcome LLM prompt: \n{prompt}")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are a concise, beginner-friendly investing assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logging.error(f"Error calling welcome LLM: {e}")
+            return "Welcome back to MemoryVest!"
+
     def parse_user_input(self, user_input: str, current_profile: UserProfile = None, current_positions: list = None, current_cash: float = 0.0) -> Dict[str, Any]:
         """
         Parses user input to extract structured properties.

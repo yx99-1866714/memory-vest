@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import List
+from typing import List, Optional
 
 class UserProfile(BaseModel):
     user_id: str
@@ -14,3 +14,4 @@ class UserProfile(BaseModel):
     interests: List[str]
     sector_preferences: List[str]
     alert_sensitivity: str
+    welcome_message: Optional[str] = None

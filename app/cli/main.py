@@ -106,89 +106,125 @@ def chat(user_id: str = typer.Option(..., help="User ID session")):
     profile_svc = ProfileService()
     portfolio_svc = PortfolioService()
     
-    while True:
-        user_input = typer.prompt(">")
-        if user_input.lower() in ("exit", "quit"):
-            break
-            
-        # Parse Intent using LLM
+    # Display introductory message if it is a new user
+    if not profile_svc.get_profile(user_id):
+        console.print(
+            "\n[bold blue]MemoryVest:[/bold blue] Hi, I'm MemoryVest, your companion agent for investing. "
+            "Feel free to talk to me anytime you want. You can tell me things like your interests/hobbies, "
+            "experience levels, risk tolerances, what stocks to watch for, etc. and I will generate "
+            "regular reports for you and send them to your email.\n"
+        )
+    else:
         current_profile = profile_svc.get_profile(user_id)
-        current_positions = portfolio_svc.get_positions(user_id)
-        current_cash_bal = portfolio_svc.get_cash_balance(user_id)
-        cash_amt = current_cash_bal.available_cash if current_cash_bal else 0.0
+        if current_profile.welcome_message:
+            console.print(f"\n[bold blue]MemoryVest:[/bold blue] {current_profile.welcome_message}\n")
+            # Immediately invalidate the saved message so a crash/abort doesn't leave it stale
+            current_profile.welcome_message = None
+            profile_svc.upsert_profile(current_profile)
+        else:
+            with console.status("[cyan]Retrieving memories and generating welcome message...[/cyan]"):
+                current_positions = portfolio_svc.get_positions(user_id)
+                memory_context = memory_svc.search_episodic_context(user_id)
+                welcome_msg = extractor.generate_welcome_message(current_profile, current_positions, memory_context)
+            console.print(f"\n[bold blue]MemoryVest:[/bold blue] {welcome_msg}\n")
+    
+    try:
+        while True:
+            user_input = typer.prompt(">")
+            if user_input.lower() in ("exit", "quit"):
+                break
+                
+            # Parse Intent using LLM
+            current_profile = profile_svc.get_profile(user_id)
+            current_positions = portfolio_svc.get_positions(user_id)
+            current_cash_bal = portfolio_svc.get_cash_balance(user_id)
+            cash_amt = current_cash_bal.available_cash if current_cash_bal else 0.0
 
-        with console.status("[cyan]Thinking..."):
-            logging.debug(f"Sending chat input to extraction service: {user_input}")
-            extracted = extractor.parse_user_input(
-                user_input=user_input, 
-                current_profile=current_profile, 
-                current_positions=current_positions, 
-                current_cash=cash_amt
-            )
-            logging.debug(f"Extracted payload: {extracted}")
-        
-        # Apply structured updates
-        profile_updates = extracted.get("profile_updates", {})
-        if profile_updates and any(v is not None for v in profile_updates.values()):
-            if current_profile:
-                for k, v in profile_updates.items():
-                    if v is not None:
-                        if hasattr(current_profile, k):
-                            setattr(current_profile, k, v)
-                profile_svc.upsert_profile(current_profile)
-            else:
-                new_profile = UserProfile(
-                    user_id=user_id,
-                    email=profile_updates.get("email") or "demo@example.com", # Default if not specified
-                    experience_level=profile_updates.get("experience_level") or "beginner",
-                    risk_tolerance=profile_updates.get("risk_tolerance") or "moderate",
-                    explanation_style=profile_updates.get("explanation_style") or "plain_english",
-                    jargon_tolerance=profile_updates.get("jargon_tolerance") or "low",
-                    report_frequency=profile_updates.get("report_frequency") or "daily",
-                    report_length=profile_updates.get("report_length") or "short",
-                    timezone=profile_updates.get("timezone") or "UTC",
-                    interests=profile_updates.get("interests") or [],
-                    sector_preferences=profile_updates.get("sector_preferences") or [],
-                    alert_sensitivity=profile_updates.get("alert_sensitivity") or "important_only"
+            with console.status("[cyan]Thinking..."):
+                logging.debug(f"Sending chat input to extraction service: {user_input}")
+                extracted = extractor.parse_user_input(
+                    user_input=user_input, 
+                    current_profile=current_profile, 
+                    current_positions=current_positions, 
+                    current_cash=cash_amt
                 )
-                profile_svc.upsert_profile(new_profile)
-            console.print("[dim]Profile updated locally.[/dim]")
-
-        for p in extracted.get("positions_to_add", []):
-            try:
-                pos = Position(
-                    user_id=user_id,
-                    ticker=p.get("ticker", "").upper(),
-                    shares=float(p.get("shares", 0.0)),
-                    avg_cost=float(p.get("avg_cost", 0.0)),
-                    opened_at=datetime.utcnow(),
-                    status="open"
-                )
-                portfolio_svc.add_position(pos)
-                console.print(f"[dim]Position added: {pos.ticker}[/dim]")
-            except Exception as e:
-                console.print(f"[red]Error parsing position: {e}[/red]")
-        
-        if extracted.get("cash_update") is not None:
-            bal = CashBalance(
-                user_id=user_id,
-                available_cash=float(extracted["cash_update"]),
-                updated_at=datetime.utcnow()
-            )
-            portfolio_svc.upsert_cash_balance(bal)
-            console.print(f"[dim]Cash updated to ${bal.available_cash}[/dim]")
-        
-        # Save exact context to EverMemOS
-        memory_note = extracted.get("memory_note")
-        if memory_note:
-            try:
-                memory_svc.store_user_message(user_id=user_id, content=user_input)
-                console.print("[dim]Memory stored in EverMemOS.[/dim]")
-            except Exception as e:
-                console.print(f"[red]Failed to connect to EverMemOS: {e}[/red]")
+                logging.debug(f"Extracted payload: {extracted}")
             
-        console.print(f"[bold blue]MemoryVest:[/bold blue] Understood. I've updated your preferences and portfolio where needed. My takeaway: {memory_note or 'Got it.'}")
-        logging.debug("Chat iteration complete.")
+            # Apply structured updates
+            profile_updates = extracted.get("profile_updates", {})
+            if profile_updates and any(v is not None for v in profile_updates.values()):
+                if current_profile:
+                    for k, v in profile_updates.items():
+                        if v is not None:
+                            if hasattr(current_profile, k):
+                                setattr(current_profile, k, v)
+                    profile_svc.upsert_profile(current_profile)
+                else:
+                    new_profile = UserProfile(
+                        user_id=user_id,
+                        email=profile_updates.get("email") or "demo@example.com", # Default if not specified
+                        experience_level=profile_updates.get("experience_level") or "beginner",
+                        risk_tolerance=profile_updates.get("risk_tolerance") or "moderate",
+                        explanation_style=profile_updates.get("explanation_style") or "plain_english",
+                        jargon_tolerance=profile_updates.get("jargon_tolerance") or "low",
+                        report_frequency=profile_updates.get("report_frequency") or "daily",
+                        report_length=profile_updates.get("report_length") or "short",
+                        timezone=profile_updates.get("timezone") or "UTC",
+                        interests=profile_updates.get("interests") or [],
+                        sector_preferences=profile_updates.get("sector_preferences") or [],
+                        alert_sensitivity=profile_updates.get("alert_sensitivity") or "important_only"
+                    )
+                    profile_svc.upsert_profile(new_profile)
+                console.print("[dim]Profile updated locally.[/dim]")
+
+            for p in extracted.get("positions_to_add", []):
+                try:
+                    pos = Position(
+                        user_id=user_id,
+                        ticker=p.get("ticker", "").upper(),
+                        shares=float(p.get("shares", 0.0)),
+                        avg_cost=float(p.get("avg_cost", 0.0)),
+                        opened_at=datetime.utcnow(),
+                        status="open"
+                    )
+                    portfolio_svc.add_position(pos)
+                    console.print(f"[dim]Position added: {pos.ticker}[/dim]")
+                except Exception as e:
+                    console.print(f"[red]Error parsing position: {e}[/red]")
+            
+            if extracted.get("cash_update") is not None:
+                bal = CashBalance(
+                    user_id=user_id,
+                    available_cash=float(extracted["cash_update"]),
+                    updated_at=datetime.utcnow()
+                )
+                portfolio_svc.upsert_cash_balance(bal)
+                console.print(f"[dim]Cash updated to ${bal.available_cash}[/dim]")
+            
+            # Save exact context to EverMemOS
+            memory_note = extracted.get("memory_note")
+            if memory_note:
+                try:
+                    memory_svc.store_user_message(user_id=user_id, content=user_input)
+                    console.print("[dim]Memory stored in EverMemOS.[/dim]")
+                except Exception as e:
+                    console.print(f"[red]Failed to connect to EverMemOS: {e}[/red]")
+                
+            console.print(f"[bold blue]MemoryVest:[/bold blue] Understood. I've updated your preferences and portfolio where needed. My takeaway: {memory_note or 'Got it.'}")
+            logging.debug("Chat iteration complete.")
+
+    except (KeyboardInterrupt, typer.Abort):
+        console.print("\n[dim]Chat aborted by user.[/dim]")
+    finally:
+        with console.status("[cyan]Generating summary for your next visit...[/cyan]"):
+            final_profile = profile_svc.get_profile(user_id)
+            if final_profile:
+                final_positions = portfolio_svc.get_positions(user_id)
+                final_memory_context = memory_svc.search_episodic_context(user_id)
+                next_welcome = extractor.generate_welcome_message(final_profile, final_positions, final_memory_context)
+                final_profile.welcome_message = next_welcome
+                profile_svc.upsert_profile(final_profile)
+        console.print("[dim]Summary saved. Goodbye![/dim]")
 
 if __name__ == "__main__":
     app()

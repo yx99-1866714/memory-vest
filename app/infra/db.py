@@ -25,7 +25,8 @@ def init_db():
         timezone TEXT,
         interests TEXT,
         sector_preferences TEXT,
-        alert_sensitivity TEXT
+        alert_sensitivity TEXT,
+        welcome_message TEXT
     );
     
     CREATE TABLE IF NOT EXISTS positions (
@@ -67,6 +68,13 @@ def init_db():
     );
     """)
     conn.commit()
+    
+    try:
+        c.execute("ALTER TABLE profiles ADD COLUMN welcome_message TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass # Column likely already exists
+        
     conn.close()
 
 if __name__ == "__main__":

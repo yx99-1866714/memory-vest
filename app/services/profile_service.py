@@ -27,8 +27,8 @@ class ProfileService:
                 user_id, email, experience_level, risk_tolerance,
                 explanation_style, jargon_tolerance, report_frequency,
                 report_length, timezone, interests, sector_preferences,
-                alert_sensitivity
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                alert_sensitivity, welcome_message
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
                 email=excluded.email,
                 experience_level=excluded.experience_level,
@@ -40,14 +40,15 @@ class ProfileService:
                 timezone=excluded.timezone,
                 interests=excluded.interests,
                 sector_preferences=excluded.sector_preferences,
-                alert_sensitivity=excluded.alert_sensitivity
+                alert_sensitivity=excluded.alert_sensitivity,
+                welcome_message=excluded.welcome_message
             """,
             (
                 profile.user_id, profile.email, profile.experience_level,
                 profile.risk_tolerance, profile.explanation_style, profile.jargon_tolerance,
                 profile.report_frequency, profile.report_length, profile.timezone,
                 json.dumps(profile.interests), json.dumps(profile.sector_preferences),
-                profile.alert_sensitivity
+                profile.alert_sensitivity, profile.welcome_message
             )
         )
         conn.commit()
