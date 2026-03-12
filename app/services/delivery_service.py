@@ -20,7 +20,7 @@ class DeliveryService:
         msg['To'] = to_email
         msg['Subject'] = subject
         
-        msg.attach(MIMEText(report_body, 'plain'))
+        msg.attach(MIMEText(report_body, 'html'))
         
         try:
             if self.smtp_port == 465:
