@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, TrendingUp, DollarSign, Briefcase, Edit2, Trash2, Check, X, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { UploadCloud, TrendingUp, DollarSign, Briefcase, Edit2, Trash2, Check, X, Sparkles, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import './Dashboard.css';
 
 export default function Dashboard({ userId }) {
@@ -19,6 +19,7 @@ export default function Dashboard({ userId }) {
   const [aiReview, setAiReview] = useState(null);
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
   
   // New API fetch function for initial load
   const loadPositions = async () => {
@@ -64,9 +65,21 @@ export default function Dashboard({ userId }) {
     return null; /* Fallback */
   };
 
+  const handleRefreshPrices = async () => {
+    setIsRefreshingPrices(true);
+    const updatedPositions = await Promise.all(
+      positions.map(async (pos) => {
+        const livePrice = await fetchPrice(pos.ticker);
+        return { ...pos, currentPrice: livePrice !== null ? livePrice : pos.currentPrice, _priceChecked: true };
+      })
+    );
+    setPositions(updatedPositions);
+    setIsRefreshingPrices(false);
+  };
+
   const positionsSignature = React.useMemo(() => {
-    // Computes a stable signature based only on holdings and cost-basis, ignoring live price fluctuations
-    return JSON.stringify(positions.map(p => `${p.ticker}-${p.shares}-${p.avgCost}`).sort());
+    // Computes a stable signature based on holdings, cost-basis, and fetched market prices
+    return JSON.stringify(positions.map(p => `${p.ticker}-${p.shares}-${p.avgCost}-${p.currentPrice ? p.currentPrice.toFixed(2) : 'null'}`).sort());
   }, [positions]);
 
   React.useEffect(() => {
@@ -76,12 +89,10 @@ export default function Dashboard({ userId }) {
       let changed = false;
       const updatedPositions = await Promise.all(
         positions.map(async (pos) => {
-          if (pos.currentPrice === null) {
+          if (pos.currentPrice === null && !pos._priceChecked) {
             const livePrice = await fetchPrice(pos.ticker);
-            if (livePrice !== null) {
-              changed = true;
-              return { ...pos, currentPrice: livePrice };
-            }
+            changed = true;
+            return { ...pos, currentPrice: livePrice !== null ? livePrice : 0, _priceChecked: true };
           }
           return pos;
         })
@@ -92,6 +103,10 @@ export default function Dashboard({ userId }) {
     };
     updatePrices();
 
+    // Wait for initial prices to load before checking cache or regenerating
+    const hasUnloadedPrices = positions.some(p => p.currentPrice === null && !p._priceChecked);
+    if (hasUnloadedPrices) return;
+
     const fetchAiReview = async () => {
       setIsLoadingReview(true);
       try {
@@ -100,7 +115,7 @@ export default function Dashboard({ userId }) {
           const data = await response.json();
           setAiReview(data.review);
           // Cache the response locked to the current portfolio signature
-          sessionStorage.setItem(`ai_review_${userId}`, JSON.stringify({ review: data.review, sig: positionsSignature }));
+          localStorage.setItem(`ai_review_${userId}`, JSON.stringify({ review: data.review, sig: positionsSignature }));
         }
       } catch (err) {
         console.error("Failed to load AI review", err);
@@ -111,7 +126,7 @@ export default function Dashboard({ userId }) {
     };
     
     // Check for a valid cached AI review before initiating the heavy backend fetch
-    const cached = sessionStorage.getItem(`ai_review_${userId}`);
+    const cached = localStorage.getItem(`ai_review_${userId}`);
     if (cached) {
       try {
         const parsed = JSON.parse(cached);
@@ -405,7 +420,18 @@ export default function Dashboard({ userId }) {
                   <th>Ticker</th>
                   <th>Shares</th>
                   <th>Avg Cost</th>
-                  <th>Current Price</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>
+                    Current Price
+                    <button 
+                      onClick={handleRefreshPrices} 
+                      disabled={isRefreshingPrices}
+                      className="action-btn" 
+                      style={{ padding: '2px', marginLeft: '6px', verticalAlign: 'middle', background: 'transparent' }}
+                      title="Refresh Prices"
+                    >
+                      <RefreshCw size={14} className={isRefreshingPrices ? "spin" : ""} />
+                    </button>
+                  </th>
                   <th>Total Return</th>
                   <th className="action-col">Actions</th>
                 </tr>

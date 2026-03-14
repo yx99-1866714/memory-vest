@@ -34,7 +34,7 @@ The structure must be:
   "positions_to_update": [{{"ticker": "<str>", "shares": "<float>", "avg_cost": "<float>"}}],
   "cash_update": "<float or null>",
   "watch_intents": [{{"ticker": "<str>", "type": "<str>", "note": "<str>", "target_zone_low": "<float or null>", "target_zone_high": "<float or null>"}}],
-  "memory_note": "<string: brief summary of what user told us for episodic memory or null>",
+  "memory_note": "<string: MUST BE POPULATED with a summary if the user asks you to monitor events/sectors, or gives context to remember. Otherwise null>",
   "response_message": "<string: a natural, helpful, and conversational response directly to the user, acting as a friendly investing assistant>"
 }}
 

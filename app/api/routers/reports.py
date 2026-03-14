@@ -37,9 +37,19 @@ def generate_report(user_id: str):
         if not profile:
             raise HTTPException(status_code=400, detail="User profile not found. Please log in first.")
 
-        positions = PortfolioService().get_positions(user_id)
-        cash = PortfolioService().get_cash_balance(user_id)
+        # Fetch stored action items and format as context for the report
+        portfolio_svc = PortfolioService()
+        positions = portfolio_svc.get_positions(user_id)
+        cash = portfolio_svc.get_cash_balance(user_id)
         cash_amt = cash.available_cash if cash else 0.0
+        stored_action_items = portfolio_svc.get_stored_action_items(user_id)
+        if stored_action_items:
+            action_items_context = "\n".join(
+                f"- {item['title']} (created {item['created_at'][:10]})"
+                for item in stored_action_items
+            )
+        else:
+            action_items_context = "No active action items."
 
         memory_service = MemoryService()
         memory_context = memory_service.search_episodic_context(user_id)
@@ -47,7 +57,11 @@ def generate_report(user_id: str):
         tickers = [p.ticker for p in positions]
         sectors = profile.sector_preferences
         market_data = MarketDataService().get_portfolio_market_context(tickers, sectors)
-        news_data = NewsService().get_relevant_news(profile.interests, tickers)
+        news_data = NewsService().get_relevant_news(
+            tickers=tickers,
+            memory_context=memory_context,
+            market_data=market_data
+        )
 
         report_service = ReportService()
         report_text = report_service.generate_report(
@@ -57,7 +71,8 @@ def generate_report(user_id: str):
             cash=cash_amt,
             memory_context=memory_context,
             market_data=market_data,
-            news_data=news_data
+            news_data=news_data,
+            action_items_context=action_items_context
         )
 
         history_record = report_service.create_report_history_record(user_id, report_text)

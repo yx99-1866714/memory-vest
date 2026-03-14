@@ -28,6 +28,10 @@ Cash: ${cash_balance}
 ## Relevant News
 {news_json}
 
+## Active Action Items (User-Requested Monitoring Tasks)
+The following are tasks the user has explicitly asked MemoryVest to monitor and report on. You MUST address EACH one directly in the dedicated report section below.
+{action_items_context}
+
 ## Required Structure
 Follow this EXACT outline using HTML tags:
 
@@ -48,7 +52,7 @@ Follow this EXACT outline using HTML tags:
 
 <h3>News That Actually Matters To You</h3>
 <ul>
-  <li>(Summarize the provided news stories and explain WHY they matter to the user's holdings or interests.)</li>
+  <li>(For each news article in the Relevant News data, format it as: '<a href="[url]">[title]</a> — [one sentence explaining WHY this matters to the user's specific holdings or interests].' Do NOT write 'An article is available'. Use the article title as the hyperlink text. Always include a working <a href> tag using the url field.)</li>
 </ul>
 
 <h3>Simple Technical Watch Levels</h3>
@@ -59,6 +63,11 @@ Follow this EXACT outline using HTML tags:
 <h3>What To Watch Next</h3>
 <ul>
   <li>(Provide 2-3 suggestions on what to monitor in the coming days based on their foresight memory or market trends.)</li>
+</ul>
+
+<h3>🎯 Action Item Updates</h3>
+<ul>
+  <li>(For EACH active action item listed in the "Active Action Items" section above, provide a focused update: what happened today related to this item, which holdings or sectors are affected, and whether it warrants immediate attention. If there are no active action items, omit this section entirely.)</li>
 </ul>
 
 <hr>

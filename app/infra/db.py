@@ -67,6 +67,16 @@ def init_db():
         email_provider_id TEXT,
         report_content TEXT
     );
+    
+    CREATE TABLE IF NOT EXISTS action_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        memory_source_hash TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description_html TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        UNIQUE(user_id, memory_source_hash)
+    );
     """)
     conn.commit()
     

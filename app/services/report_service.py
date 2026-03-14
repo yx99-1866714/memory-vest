@@ -24,7 +24,7 @@ class ReportService:
         with open(prompt_path, "r", encoding="utf-8") as f:
             self.prompt_template = f.read()
 
-    def generate_report(self, user_id: str, profile: dict, positions: list, cash: float, memory_context: str, market_data: dict, news_data: list) -> str:
+    def generate_report(self, user_id: str, profile: dict, positions: list, cash: float, memory_context: str, market_data: dict, news_data: list, action_items_context: str = "") -> str:
         """
         Generates the daily report string using LLM.
         """
@@ -38,7 +38,8 @@ class ReportService:
             cash_balance=cash,
             memory_context=memory_context,
             market_data_json=json.dumps(market_data, indent=2),
-            news_json=json.dumps(news_data, indent=2)
+            news_json=json.dumps(news_data, indent=2),
+            action_items_context=action_items_context if action_items_context else "No active action items."
         )
 
         try:

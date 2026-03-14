@@ -62,7 +62,7 @@
   margin: 0;
 }
 
-.custom-action-formatting li {
+.custom-action-formatting details {
   background: rgba(15, 17, 21, 0.4);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -71,14 +71,88 @@
   transition: transform 0.2s, border-color 0.2s;
 }
 
-.custom-action-formatting li:hover {
+.custom-action-formatting details:hover {
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
-.custom-action-formatting b {
+.custom-action-formatting summary {
   color: var(--accent-primary);
   font-size: 1.1rem;
-  display: inline-block;
-  margin-bottom: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style-position: inside;
+  outline: none;
+  transition: color 0.2s;
+}
+
+.custom-action-formatting summary:hover {
+  color: var(--accent-light);
+}
+
+.custom-action-formatting summary::marker {
+  color: var(--text-muted);
+}
+
+.custom-action-formatting details[open] summary {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.75rem;
+}
+
+.custom-action-formatting details > p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  animation: slideDownFade 0.3s ease-out forwards;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.action-item-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.dismiss-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+  opacity: 0;
+}
+
+.action-item-wrapper:hover .dismiss-btn {
+  opacity: 1;
+}
+
+.dismiss-btn:hover {
+  color: var(--color-danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.action-item-timestamp {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.02em;
 }

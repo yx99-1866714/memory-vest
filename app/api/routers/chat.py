@@ -116,8 +116,11 @@ def process_chat(user_id: str, request: ChatRequest):
 
         # Record Context Note to Memory
         memory_note = extracted.get("memory_note")
-        if memory_note:
+        watch_intents = extracted.get("watch_intents")
+        
+        if memory_note or watch_intents:
             try:
+                # Store the literal user request so foresight/episodic retrieval can find it
                 memory_svc.store_user_message(user_id=user_id, content=user_input)
             except Exception as me:
                  logging.error(f"EverMemOS error: {me}")

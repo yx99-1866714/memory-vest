@@ -8,6 +8,7 @@ from app.services.portfolio_service import PortfolioService
 from app.services.extraction_service import ExtractionService
 from app.services.profile_service import ProfileService
 from app.services.market_data_service import MarketDataService
+from app.services.memory_service import MemoryService
 from app.models.position import Position
 
 router = APIRouter(
@@ -89,30 +90,112 @@ def get_portfolio_review(user_id: str):
 @router.get("/{user_id}/action-items")
 def get_action_items(user_id: str):
     """
-    On-demand AI watchlist based on the current portfolio.
+    Returns all stored action items for a user instantly from the database.
+    """
+    try:
+        portfolio_svc = PortfolioService()
+        items = portfolio_svc.get_stored_action_items(user_id)
+        return {"action_items": items}
+    except Exception as e:
+        logging.error(f"Error fetching stored action items: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/{user_id}/action-items/sync")
+def sync_action_items(user_id: str):
+    """
+    Checks EverMemOS for new user directives and generates action items only for
+    those not already stored. Returns a list of newly created items.
     """
     try:
         portfolio_svc = PortfolioService()
         positions = portfolio_svc.get_positions(user_id)
         if not positions:
-             return {"action_items": "<p>You don't have any holdings yet! Add a position manually or import a CSV to unlock tailored Action Items.</p>"}
-             
+            return {"new_items": []}
+
         profile = ProfileService().get_profile(user_id)
         if not profile:
-            raise HTTPException(status_code=400, detail="Profile not found.")
-            
+            return {"new_items": []}
+
+        # Fetch memory context
+        memory_svc = MemoryService()
+        episodic_context = memory_svc.search_episodic_context(
+            user_id, query="What specific stocks, sectors, or real-world events did the user explicitly ask the AI to monitor or watch?"
+        )
+        foresight_context = memory_svc.search_foresight_context(user_id)
+
+        # Combine all raw directives into a list of unique messages
+        all_directives = []
+        for line in (episodic_context + "\n" + foresight_context).splitlines():
+            stripped = line.strip()
+            if stripped and stripped not in ("No recent conversational context.", "No future foresight intents.", "Episodic Directives:", "Foresight Intents:"):
+                all_directives.append(stripped)
+
+        if not all_directives:
+            return {"new_items": []}
+
+        import hashlib, re
+        existing_hashes = portfolio_svc.get_existing_hashes(user_id)
+        existing_items = portfolio_svc.get_stored_action_items(user_id)
+        existing_titles = [item["title"] for item in existing_items]
+
+        # Semantic deduplication: filter to only truly novel directives
+        novel_directives = portfolio_svc.deduplicate_new_directives(all_directives, existing_titles)
+        logging.info(f"Sync: {len(all_directives)} raw directives -> {len(novel_directives)} novel after dedup")
+
+        if not novel_directives:
+            return {"new_items": []}
+
         tickers = [p.ticker for p in positions]
         market_data = MarketDataService().get_portfolio_market_context(tickers, profile.sector_preferences)
-        
-        action_items_html = portfolio_svc.generate_action_items(
-            profile=profile.model_dump(mode='json'),
-            positions=[p.model_dump(mode='json') for p in positions],
-            market_data=market_data
-        )
-        return {"action_items": action_items_html}
+        profile_dict = profile.model_dump(mode='json')
+        positions_dict = [p.model_dump(mode='json') for p in positions]
+
+        new_items = []
+        for directive in novel_directives:
+            source_hash = hashlib.sha256(directive.encode()).hexdigest()[:16]
+            if source_hash in existing_hashes:
+                continue  # Same exact text already stored
+
+            html = portfolio_svc.generate_single_action_item_html(
+                directive=directive,
+                profile=profile_dict,
+                positions=positions_dict,
+                market_data=market_data
+            )
+            if not html:
+                continue
+
+            # Extract summary text for the title field
+            import re
+            summary_match = re.search(r'<summary>(.*?)</summary>', html, re.DOTALL)
+            title = summary_match.group(1).strip() if summary_match else directive[:80]
+
+            saved = portfolio_svc.save_action_item(
+                user_id=user_id,
+                memory_source_hash=source_hash,
+                title=title,
+                description_html=html
+            )
+            if saved:
+                existing_hashes.add(source_hash)
+                new_items.append({"title": title, "description_html": html, "memory_source_hash": source_hash})
+
+        return {"new_items": new_items}
     except Exception as e:
-        logging.error(f"Error generating AI action items: {e}")
+        logging.error(f"Error syncing action items: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{user_id}/action-items/{item_id}")
+def delete_action_item(user_id: str, item_id: int):
+    """Dismisses/deletes a specific stored action item."""
+    try:
+        portfolio_svc = PortfolioService()
+        deleted = portfolio_svc.delete_action_item(user_id, item_id)
+        return {"status": "success" if deleted else "not_found"}
+    except Exception as e:
+        logging.error(f"Error deleting action item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/{user_id}/cash")
 async def update_cash(user_id: str, request: CashUpdate):

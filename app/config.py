@@ -10,6 +10,10 @@ class Settings(BaseSettings):
     # Optional parameters for external APIs
     market_api_key: Optional[str] = None
     news_api_key: Optional[str] = None
+    alpha_vantage_api_key: Optional[str] = None
+    
+    # Logging Configuration
+    verbose_mode: bool = False
     
     # Delivery Service Setup
     smtp_host: str = "localhost"

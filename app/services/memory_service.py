@@ -53,12 +53,21 @@ class MemoryService:
                 top_k=5
             )
             memories_raw = res.get("result", {}).get("memories", [])
+            pending_messages = res.get("result", {}).get("pending_messages", [])
+            
             extracted_texts = []
+            
+            # Extract from compiled memories
             for mem_group in memories_raw:
                 for group_id, memory_items in mem_group.items():
                     for mem in memory_items:
                         text = mem.get("episode") or mem.get("summary") or str(mem)
                         extracted_texts.append(text)
+                        
+            # Extract from fresh pending messages
+            for pm in pending_messages:
+                text = pm.get("content") or str(pm)
+                extracted_texts.append(text)
                         
             if not extracted_texts:
                 return "No recent conversational context."
@@ -80,12 +89,21 @@ class MemoryService:
                 top_k=5
             )
             memories_raw = res.get("result", {}).get("memories", [])
+            pending_messages = res.get("result", {}).get("pending_messages", [])
+            
             extracted_texts = []
+            
+            # Extract from compiled memories
             for mem_group in memories_raw:
                 for group_id, memory_items in mem_group.items():
                     for mem in memory_items:
                         text = mem.get("episode") or mem.get("summary") or str(mem)
                         extracted_texts.append(text)
+                        
+            # Extract from fresh pending messages
+            for pm in pending_messages:
+                text = pm.get("content") or str(pm)
+                extracted_texts.append(text)
                         
             if not extracted_texts:
                 return "No future foresight intents."
