@@ -1,0 +1,138 @@
+/* Settings.css */
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ai-notice {
+  display: flex;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-left: 4px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.ai-notice-icon {
+  color: var(--accent-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 0.75rem;
+  border-radius: 50%;
+  display: flex;
+}
+
+.ai-notice-text h3 {
+  color: var(--accent-primary);
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+  font-size: 1.125rem;
+}
+
+.ai-notice-text p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.ai-notice-text strong {
+  color: #fff;
+}
+
+.settings-card {
+  padding: 2rem;
+}
+
+.settings-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.glass-input {
+  background-color: rgba(15, 17, 21, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.glass-input option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent-primary);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+}
+
+@media (max-width: 600px) {
+  .settings-form {
+    grid-template-columns: 1fr;
+  }
+}

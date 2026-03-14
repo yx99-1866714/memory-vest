@@ -1,4 +1,5 @@
 import json
+import uuid
 from typing import Optional
 from app.models.profile import UserProfile
 from app.infra.db import get_db_connection
@@ -17,6 +18,37 @@ class ProfileService:
             d["sector_preferences"] = json.loads(d["sector_preferences"])
             return UserProfile(**d)
         return None
+
+    def get_or_create_user_by_email(self, email: str) -> str:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT user_id FROM profiles WHERE email = ?", (email,))
+        row = c.fetchone()
+        
+        if row:
+            conn.close()
+            return row["user_id"]
+            
+        new_id = str(uuid.uuid4())
+        c.execute(
+            """
+            INSERT INTO profiles (
+                user_id, email, experience_level, risk_tolerance,
+                explanation_style, jargon_tolerance, report_frequency,
+                report_length, timezone, interests, sector_preferences,
+                alert_sensitivity, welcome_message
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                new_id, email, 'intermediate', 'moderate',
+                'analytical', 'medium', 'daily',
+                'medium', 'UTC', json.dumps([]), json.dumps([]),
+                'medium', None
+            )
+        )
+        conn.commit()
+        conn.close()
+        return new_id
 
     def upsert_profile(self, profile: UserProfile):
         conn = get_db_connection()

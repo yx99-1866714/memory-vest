@@ -1,0 +1,227 @@
+/* Dashboard.css */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.text-accent {
+  color: var(--accent-primary);
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+
+.main-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.card-header .subtitle {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.positions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.positions-table th {
+  text-align: left;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-transform: uppercase;
+}
+
+.positions-table td {
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid rgba(43, 48, 59, 0.5);
+  color: var(--text-primary);
+  transition: background-color 0.2s;
+}
+
+.positions-table tr:last-child td {
+  border-bottom: none;
+}
+
+.positions-table tbody tr:hover td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.fw-500 {
+  font-weight: 500;
+}
+
+.action-col {
+  text-align: right;
+  width: 90px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.action-btn:hover {
+  background-color: var(--bg-surface-hover);
+}
+
+.action-btn.edit-btn:hover { color: var(--accent-primary); }
+.action-btn.delete-btn:hover { color: var(--color-danger); }
+.action-btn.save-btn { color: var(--color-success); }
+.action-btn.save-btn:hover { background-color: rgba(16, 185, 129, 0.1); }
+.action-btn.cancel-btn { color: var(--color-danger); }
+.action-btn.cancel-btn:hover { background-color: rgba(239, 68, 68, 0.1); }
+
+.inline-edit-input {
+  width: 70px;
+  background-color: rgba(15, 17, 21, 0.8);
+  border: 1px solid var(--accent-primary);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.input-prefix-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Upload Dropzone */
+.upload-zone {
+  border: 2px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 3rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+.upload-zone:hover, .upload-zone.dragging {
+  border-color: var(--accent-primary);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.upload-icon {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  transition: color 0.3s;
+}
+
+.upload-zone:hover .upload-icon, .upload-zone.dragging .upload-icon {
+  color: var(--accent-primary);
+}
+
+.upload-zone h4 {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.upload-zone p {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.file-input-hidden {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-review-card {
+    min-width: 100%;
+  }
+}

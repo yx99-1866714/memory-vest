@@ -10,3 +10,4 @@ class ReportHistory(BaseModel):
     headline_topics: List[str]
     mentioned_tickers: List[str]
     email_provider_id: str
+    report_content: str = ""

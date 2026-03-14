@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import uuid
 from app.config import settings
 from app.models.report import ReportHistory
+from app.infra.db import get_db_connection
 import logging
 
 class ReportService:
@@ -60,11 +61,48 @@ class ReportService:
             
     def create_report_history_record(self, user_id: str, report_text: str) -> ReportHistory:
         return ReportHistory(
-            report_id=f"rpt_{datetime.now().strftime('%Y%m%d')}_{user_id}",
+            report_id=f"rpt_{datetime.now().strftime('%Y%m%d%H%M%S')}_{user_id}",
             user_id=user_id,
             generated_at=datetime.now(timezone.utc),
             delivery_status="generated",
             headline_topics=[],
             mentioned_tickers=[],
-            email_provider_id="none"
+            email_provider_id="none",
+            report_content=report_text
         )
+
+    def save_report_history(self, report: ReportHistory):
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute(
+            """
+            INSERT INTO report_history (
+                report_id, user_id, generated_at, delivery_status,
+                headline_topics, mentioned_tickers, email_provider_id, report_content
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                report.report_id, report.user_id, report.generated_at.isoformat(),
+                report.delivery_status, json.dumps(report.headline_topics),
+                json.dumps(report.mentioned_tickers), report.email_provider_id,
+                report.report_content
+            )
+        )
+        conn.commit()
+        conn.close()
+
+    def get_user_reports(self, user_id: str) -> list[ReportHistory]:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT * FROM report_history WHERE user_id = ? ORDER BY generated_at DESC", (user_id,))
+        rows = c.fetchall()
+        conn.close()
+        
+        results = []
+        for row in rows:
+            d = dict(row)
+            d["headline_topics"] = json.loads(d["headline_topics"])
+            d["mentioned_tickers"] = json.loads(d["mentioned_tickers"])
+            results.append(ReportHistory(**d))
+            
+        return results

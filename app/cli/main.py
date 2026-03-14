@@ -210,7 +210,9 @@ def chat(user_id: str = typer.Option(..., help="User ID session")):
                 except Exception as e:
                     console.print(f"[red]Failed to connect to EverMemOS: {e}[/red]")
                 
-            console.print(f"[bold blue]MemoryVest:[/bold blue] Understood. I've updated your preferences and portfolio where needed. My takeaway: {memory_note or 'Got it.'}")
+            response_msg = extracted.get("response_message")
+            fallback_msg = f"Understood. I've updated your preferences where needed. My takeaway: {memory_note or 'Got it.'}"
+            console.print(f"[bold blue]MemoryVest:[/bold blue] {response_msg or fallback_msg}")
             logging.debug("Chat iteration complete.")
 
     except (KeyboardInterrupt, typer.Abort):

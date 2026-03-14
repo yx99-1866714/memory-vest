@@ -1,0 +1,84 @@
+/* ActionItems.css */
+.action-items-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.action-items-main-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.icon-badge {
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-items-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 1.5rem;
+}
+
+.loading-state .spin {
+  opacity: 0.6;
+  color: var(--accent-primary);
+}
+
+.custom-action-formatting h3 {
+  margin-top: 0;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.custom-action-formatting ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.custom-action-formatting li {
+  background: rgba(15, 17, 21, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.custom-action-formatting li:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.custom-action-formatting b {
+  color: var(--accent-primary);
+  font-size: 1.1rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}

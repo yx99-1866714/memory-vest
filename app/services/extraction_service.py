@@ -1,7 +1,7 @@
 import json
 from openai import OpenAI
 from pathlib import Path
-from typing import Dict, Any
+from typing import List, Dict, Any
 from app.config import settings
 from app.models.profile import UserProfile
 from app.models.position import Position
@@ -9,19 +9,27 @@ import logging
 
 class ExtractionService:
     def __init__(self):
-        self.api_key = settings.openrouter_api_key
-        self.model = settings.llm_model
-        if self.api_key:
+        # Allow fallback initialization for tests and environments without keys
+        if settings.openrouter_api_key:
             self.client = OpenAI(
                 base_url="https://openrouter.ai/api/v1",
-                api_key=self.api_key,
+                api_key=settings.openrouter_api_key,
+                default_headers={
+                    "HTTP-Referer": "http://localhost:8000",
+                    "X-Title": "MemoryVest",
+                }
             )
         else:
             self.client = None
             
-        prompt_path = Path(__file__).parent.parent / "prompts" / "extract_profile.txt"
-        with open(prompt_path, "r", encoding="utf-8") as f:
-            self.prompt_template = f.read()
+        self.model = settings.llm_model
+
+        prompt_dir = Path(__file__).parent.parent / "prompts"
+        with open(prompt_dir / "extract_profile.txt", "r", encoding="utf-8") as f:
+            self.profile_prompt_template = f.read()
+            
+        with open(prompt_dir / "extract_csv.txt", "r", encoding="utf-8") as f:
+            self.csv_prompt_template = f.read()
 
     def generate_welcome_message(self, current_profile: UserProfile, current_positions: list, memory_context: str) -> str:
         """
@@ -33,10 +41,12 @@ class ExtractionService:
         prompt = f"""You are MemoryVest, a personalized investing companion.
 The user is returning to chat. Generate a short, friendly greeting.
 If there are memories from previous conversations or current holdings, briefly summarize them and mention any action items (like watching a stock).
+IMPORTANT: The Positions provided below are the absolute ground truth for the user's current holdings. Do not invent or refer to positions not listed below.
+IMPORTANT: The Profile provided below is the absolute single source of truth for the user's preferences. Do not invent or refer to traits that contradict this profile.
 Keep it under 3-4 sentences. Include no markdown. Provide just the text response.
 
-Profile: {json.dumps(current_profile.model_dump(mode='json')) if current_profile else 'None'}
-Positions: {json.dumps([p.model_dump(mode='json') for p in current_positions]) if current_positions else 'None'}
+Profile (Source of Truth for User Preferences): {json.dumps(current_profile.model_dump(mode='json')) if current_profile else 'None'}
+Positions (Source of Truth for Current Holdings): {json.dumps([p.model_dump(mode='json') for p in current_positions]) if current_positions else 'None'}
 Recent Memories:
 {memory_context}
 """
@@ -69,13 +79,14 @@ Recent Memories:
                 "positions_to_update": [],
                 "cash_update": None,
                 "watch_intents": [],
-                "memory_note": None
+                "memory_note": None,
+                "response_message": "I'm offline right now, but I'm here if you need to manually configure your account!"
             }
 
         profile_json = json.dumps(current_profile.model_dump(mode='json')) if current_profile else "{}"
         positions_json = json.dumps([p.model_dump(mode='json') for p in current_positions]) if current_positions else "[]"
 
-        prompt = self.prompt_template.format(
+        prompt = self.profile_prompt_template.format(
             current_profile=profile_json,
             current_positions=positions_json,
             current_cash=current_cash,
@@ -105,7 +116,7 @@ Recent Memories:
             logging.debug(f"Extraction LLM Raw Response: \n{raw_content}")
             return json.loads(raw_content)
         except Exception as e:
-            logging.error(f"Error calling extraction LLM: {e}")
+            logging.error(f"Extraction error: {e}")
             return {
                 "intent": "error",
                 "profile_updates": {},
@@ -113,5 +124,30 @@ Recent Memories:
                 "positions_to_update": [],
                 "cash_update": None,
                 "watch_intents": [],
-                "memory_note": None
+                "memory_note": None,
+                "response_message": "I'm sorry, I'm having a little trouble connecting to my AI brain right now."
             }
+            
+    def parse_csv_portfolio(self, csv_text: str) -> List[Dict[str, Any]]:
+        """Parses an arbitrary CSV string via LLM and returns a list of valid positions."""
+        if not self.client:
+            logging.warning("API key not set. Skipping CSV Extraction.")
+            return []
+            
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": self.csv_prompt_template},
+                    {"role": "user", "content": csv_text}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.1 # Keep it deterministic for parsing
+            )
+            raw_content = response.choices[0].message.content
+            parsed_json = json.loads(raw_content)
+            
+            return parsed_json.get("positions", [])
+        except Exception as e:
+            logging.error(f"CSV Extraction error: {e}")
+            return []

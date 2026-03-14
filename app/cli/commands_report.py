@@ -34,7 +34,8 @@ def preview_report(user_id: str = typer.Option(..., help="User ID to generate re
         
         news_data = NewsService().get_relevant_news(profile.interests, tickers)
         
-        report = ReportService().generate_report(
+        report_service = ReportService()
+        report = report_service.generate_report(
             user_id=user_id,
             profile=profile.model_dump(mode='json'),
             positions=[p.model_dump(mode='json') for p in positions],
@@ -43,6 +44,10 @@ def preview_report(user_id: str = typer.Option(..., help="User ID to generate re
             market_data=market_data,
             news_data=news_data
         )
+        
+        # Persist the full generated report content into SQLite History
+        history_record = report_service.create_report_history_record(user_id, report)
+        report_service.save_report_history(history_record)
 
     console.print(f"\n[bold blue]=== Report Preview for {user_id} ===[/bold blue]\n")
     console.print(report)
@@ -68,7 +73,8 @@ def send_report(user_id: str = typer.Option(..., help="User ID to send report to
     
     news_data = NewsService().get_relevant_news(profile.interests, tickers)
     
-    report = ReportService().generate_report(
+    report_service = ReportService()
+    report = report_service.generate_report(
         user_id=user_id,
         profile=profile.model_dump(mode='json'),
         positions=[p.model_dump(mode='json') for p in positions],
@@ -77,6 +83,10 @@ def send_report(user_id: str = typer.Option(..., help="User ID to send report to
         market_data=market_data,
         news_data=news_data
     )
+    
+    # Persist the history to DB before sending via email
+    history_record = report_service.create_report_history_record(user_id, report)
+    report_service.save_report_history(history_record)
     
     DeliveryService().send_report(profile.email, f"MemoryVest Daily Report for {user_id}", report)
     typer.echo(f"Report sent to {profile.email}")

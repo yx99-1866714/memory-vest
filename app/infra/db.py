@@ -64,13 +64,20 @@ def init_db():
         delivery_status TEXT,
         headline_topics TEXT,
         mentioned_tickers TEXT,
-        email_provider_id TEXT
+        email_provider_id TEXT,
+        report_content TEXT
     );
     """)
     conn.commit()
     
     try:
         c.execute("ALTER TABLE profiles ADD COLUMN welcome_message TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass # Column likely already exists
+
+    try:
+        c.execute("ALTER TABLE report_history ADD COLUMN report_content TEXT")
         conn.commit()
     except sqlite3.OperationalError:
         pass # Column likely already exists

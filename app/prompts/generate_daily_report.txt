@@ -10,10 +10,12 @@ Your task is to generate a comprehensive Daily Report based on the user's profil
 - Use `<h3>` for main section headers, `<ul>` and `<li>` for bullet points, and use `<b>` tags to highlight tickers, numbers, and important trends.
 - Do not wrap the output in `<html>` or `<body>` tags, just provide the raw HTML content block.
 
-## User Profile
+## User Profile (Source of Truth for User Preferences)
+IMPORTANT: The data provided here is the absolute single source of truth for the user's preferences, traits, and settings. Do not invent, assume, or hallucinate preferences that contradict this structure.
 {profile_json}
 
-## Current Portfolio & Cash
+## Current Portfolio & Cash (Source of Truth for Current Holdings)
+IMPORTANT: The data provided here is the absolute source of truth for the user's current holdings. Do not invent, assume, or hallucinate holdings that are not explicitly listed in this section.
 {portfolio_json}
 Cash: ${cash_balance}
 
