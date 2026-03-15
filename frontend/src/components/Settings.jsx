@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Info, Save, Mail, BarChart2, Shield, Settings2, Clock } from 'lucide-react';
+import { Info, Save, Mail, BarChart2, Shield, Settings2, Clock, Trash2 } from 'lucide-react';
 import './Settings.css';
 import API_BASE from '../config.js';
 
-export default function Settings({ userId }) {
+export default function Settings({ userId, onLogout }) {
   const [profile, setProfile] = useState({
     email: 'user@example.com',
     experienceLevel: 'intermediate',
@@ -11,6 +11,8 @@ export default function Settings({ userId }) {
     interests: 'AI, Clean Energy, Web3',
     reportFrequency: 'daily'
   });
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -55,6 +57,33 @@ export default function Settings({ userId }) {
     } catch (error) {
        console.error("Save profile error", error);
        alert("Error connecting to server to save profile.");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/profile/${userId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.warnings?.length) {
+          console.warn("Partial warnings during deletion:", data.warnings);
+        }
+        // Log user out after successful deletion
+        if (onLogout) onLogout();
+        else {
+          localStorage.clear();
+          window.location.reload();
+        }
+      } else {
+        alert(`Failed to delete account: ${data.detail || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to server.');
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -121,6 +150,54 @@ export default function Settings({ userId }) {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="card glass-panel settings-card slide-up danger-zone-card" style={{ animationDelay: '0.2s' }}>
+        <div className="card-header">
+          <h3 style={{ color: 'var(--color-danger, #ef4444)' }}>⚠️ Danger Zone</h3>
+          <p className="subtitle">These actions are permanent and cannot be undone.</p>
+        </div>
+
+        {showDeleteConfirm ? (
+          <div className="delete-confirm-box">
+            <p>Are you sure? This will <strong>permanently</strong> delete your account, all portfolio data, reports, action items, and AI memories. This cannot be undone.</p>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <button
+                className="btn-danger"
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount}
+              >
+                <Trash2 size={16} />
+                {isDeletingAccount ? 'Deleting…' : 'Yes, delete everything'}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeletingAccount}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ padding: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <strong>Delete Account</strong>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>
+                  Wipes all your data including memories, portfolio, and reports.
+                </p>
+              </div>
+              <button
+                className="btn-danger"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <Trash2 size={16} /> Delete Account
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

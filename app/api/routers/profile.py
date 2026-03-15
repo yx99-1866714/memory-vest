@@ -76,3 +76,44 @@ async def update_profile(user_id: str, request: ProfileUpdateRequest):
     except Exception as e:
         logging.error(f"Error updating profile: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{user_id}")
+def delete_user(user_id: str):
+    """
+    Permanently deletes the user and all their data.
+    Order: EverMemOS memories first, then local DB (all tables).
+    """
+    from app.infra.evermemos_client import EverMemOSClient
+    from app.infra.db import get_db_connection
+
+    errors = []
+
+    # 1 — Delete EverMemOS memories (best-effort, don't block DB wipe on failure)
+    try:
+        EverMemOSClient().delete_all_user_memories(user_id)
+        logging.info(f"EverMemOS memories deleted for user {user_id}")
+    except Exception as e:
+        logging.warning(f"EverMemOS deletion failed (continuing): {e}")
+        errors.append(f"EverMemOS: {e}")
+
+    # 2 — Wipe all local DB tables
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        tables = ["profiles", "positions", "cash_balances", "watch_intents", "report_history", "action_items"]
+        for table in tables:
+            c.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+        # Also wipe auth record if it exists
+        try:
+            c.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+        except Exception:
+            pass  # Table may not exist
+        conn.commit()
+        conn.close()
+        logging.info(f"All local DB data deleted for user {user_id}")
+    except Exception as e:
+        logging.error(f"DB deletion failed for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete local data: {e}")
+
+    return {"success": True, "warnings": errors}
+

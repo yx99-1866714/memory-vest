@@ -94,7 +94,7 @@ function App() {
             )}
             
             {activeTab === 'Settings' && (
-              <Settings userId={userId} />
+              <Settings userId={userId} onLogout={handleLogout} />
             )}
           </div>
         </main>
