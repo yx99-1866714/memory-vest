@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UploadCloud, TrendingUp, DollarSign, Briefcase, Edit2, Trash2, Check, X, Sparkles, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { UploadCloud, TrendingUp, DollarSign, Briefcase, Edit2, Trash2, Check, X, Sparkles, ChevronDown, ChevronUp, RefreshCw, PlusCircle } from 'lucide-react';
 import './Dashboard.css';
 import API_BASE from '../config.js';
 
@@ -21,6 +21,11 @@ export default function Dashboard({ userId }) {
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
+
+  // Add position inline form state
+  const [isAddingPosition, setIsAddingPosition] = useState(false);
+  const [addFormData, setAddFormData] = useState({ ticker: '', shares: '', avgCost: '' });
+  const [isSubmittingAdd, setIsSubmittingAdd] = useState(false);
   
   // New API fetch function for initial load
   const loadPositions = async () => {
@@ -310,6 +315,37 @@ export default function Dashboard({ userId }) {
     }
   };
 
+  const handleAddPosition = async () => {
+    const ticker = addFormData.ticker.trim().toUpperCase();
+    const shares = parseFloat(addFormData.shares);
+    const avgCost = parseFloat(addFormData.avgCost);
+    if (!ticker || isNaN(shares) || shares <= 0 || isNaN(avgCost) || avgCost <= 0) {
+      alert('Please enter a valid ticker, shares, and average cost.');
+      return;
+    }
+    setIsSubmittingAdd(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/portfolio/${userId}/positions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker, shares, avg_cost: avgCost })
+      });
+      if (res.ok) {
+        setAddFormData({ ticker: '', shares: '', avgCost: '' });
+        setIsAddingPosition(false);
+        await loadPositions(); // Reload to get fresh list with prices
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(`Failed to add position: ${err.detail || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to backend.');
+    } finally {
+      setIsSubmittingAdd(false);
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="summary-cards">
@@ -370,13 +406,23 @@ export default function Dashboard({ userId }) {
         <div className="card glass-panel positions-table-card">
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3>Current Holdings</h3>
-            <button 
-              className="action-btn" 
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', padding: '0.5rem 1rem', borderRadius: '8px' }}
-              onClick={() => setIsImportOpen(!isImportOpen)}
-            >
-              <UploadCloud size={16} /> Import CSV {isImportOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <button
+                className="generate-btn"
+                style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--color-success)', border: '1px solid rgba(16, 185, 129, 0.25)' }}
+                onClick={() => { setIsAddingPosition(v => !v); setAddFormData({ ticker: '', shares: '', avgCost: '' }); }}
+                title="Add Position"
+              >
+                <PlusCircle size={16} />
+              </button>
+              <button
+                className="action-btn"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-primary)', padding: '0.5rem 1rem', borderRadius: '8px' }}
+                onClick={() => setIsImportOpen(!isImportOpen)}
+              >
+                <UploadCloud size={16} /> Import CSV {isImportOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
           </div>
 
           {isImportOpen && (
@@ -484,6 +530,57 @@ export default function Dashboard({ userId }) {
                     </tr>
                   );
                 })}
+
+                {/* Inline add-position row */}
+                {isAddingPosition && (
+                  <tr className="add-position-row">
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="e.g. AAPL"
+                        value={addFormData.ticker}
+                        onChange={e => setAddFormData(f => ({ ...f, ticker: e.target.value.toUpperCase() }))}
+                        className="inline-edit-input add-ticker-input"
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') handleAddPosition(); if (e.key === 'Escape') setIsAddingPosition(false); }}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        placeholder="Shares"
+                        value={addFormData.shares}
+                        onChange={e => setAddFormData(f => ({ ...f, shares: e.target.value }))}
+                        className="inline-edit-input"
+                        onKeyDown={e => { if (e.key === 'Enter') handleAddPosition(); if (e.key === 'Escape') setIsAddingPosition(false); }}
+                      />
+                    </td>
+                    <td>
+                      <div className="input-prefix-wrapper">
+                        <span>$</span>
+                        <input
+                          type="number"
+                          placeholder="Avg cost"
+                          value={addFormData.avgCost}
+                          onChange={e => setAddFormData(f => ({ ...f, avgCost: e.target.value }))}
+                          className="inline-edit-input"
+                          onKeyDown={e => { if (e.key === 'Enter') handleAddPosition(); if (e.key === 'Escape') setIsAddingPosition(false); }}
+                        />
+                      </div>
+                    </td>
+                    <td colSpan={2} style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</td>
+                    <td className="action-col">
+                      <div className="action-buttons">
+                        <button onClick={handleAddPosition} disabled={isSubmittingAdd} className="action-btn save-btn" title="Add">
+                          {isSubmittingAdd ? '…' : <Check size={16} />}
+                        </button>
+                        <button onClick={() => setIsAddingPosition(false)} className="action-btn cancel-btn" title="Cancel">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

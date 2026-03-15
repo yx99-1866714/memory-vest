@@ -159,6 +159,19 @@
   outline: none;
 }
 
+.add-ticker-input {
+  width: 90px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.add-position-row td {
+  background: rgba(16, 185, 129, 0.04);
+  border-top: 1px dashed rgba(16, 185, 129, 0.3);
+}
+
+
 .input-prefix-wrapper {
   display: flex;
   align-items: center;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
-import { FileText, Calendar, Loader, Clock, Inbox, Sparkles, Trash2, Bot, User, Send } from 'lucide-react';
+import { FileText, Calendar, Loader, Clock, Inbox, Sparkles, Trash2, Bot, User, Send, Mail } from 'lucide-react';
 import './Reports.css';
 import API_BASE from '../config.js';
 
@@ -127,6 +127,7 @@ export default function Reports({ userId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(!!generationState[userId]);
   const [error, setError] = useState(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -206,6 +207,26 @@ export default function Reports({ userId }) {
     }
   };
 
+  const handleEmailReport = async (report) => {
+    setIsSendingEmail(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/reports/${userId}/${report.report_id}/email`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`✅ Report sent to ${data.sent_to}`);
+      } else {
+        alert(`❌ ${data.detail || 'Failed to send email.'}`);
+      }
+    } catch (err) {
+      console.error('Email send error:', err);
+      alert('Error connecting to backend.');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   return (
     <div className="reports-container fade-in">
       {/* Sidebar */}
@@ -272,7 +293,18 @@ export default function Reports({ userId }) {
             <>
               <div className="report-viewer-header">
                 <h2>Insight generated on {new Date(selectedReport.generated_at).toLocaleDateString()}</h2>
-                <span className="report-badge">AI Authored</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <button
+                    className="generate-btn"
+                    onClick={() => handleEmailReport(selectedReport)}
+                    disabled={isSendingEmail}
+                    title="Send report to your email"
+                    style={{ color: '#60a5fa', borderColor: 'rgba(96,165,250,0.3)', background: 'rgba(96,165,250,0.1)' }}
+                  >
+                    {isSendingEmail ? <Loader size={15} className="spin" /> : <Mail size={15} />}
+                  </button>
+                  <span className="report-badge">AI Authored</span>
+                </div>
               </div>
               <div className="report-viewer-content markdown-body">
                 {selectedReport.report_content ? (

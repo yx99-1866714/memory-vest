@@ -113,6 +113,36 @@ def delete_report(user_id: str, report_id: str):
         logging.error(f"Error deleting report: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/{user_id}/{report_id}/email")
+def email_report(user_id: str, report_id: str):
+    """
+    Sends the specified report to the user's registered email address.
+    """
+    try:
+        profile = ProfileService().get_profile(user_id)
+        if not profile or not profile.email:
+            raise HTTPException(status_code=400, detail="No email address found for this user. Please set your email in Settings.")
+
+        report_svc = ReportService()
+        reports = report_svc.get_user_reports(user_id)
+        report = next((r for r in reports if r.report_id == report_id), None)
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found.")
+        if not report.report_content:
+            raise HTTPException(status_code=400, detail="This report has no content to send.")
+
+        report_svc.send_report_email(
+            to_email=profile.email,
+            report_content=report.report_content,
+            generated_at=report.generated_at.isoformat()
+        )
+        return {"success": True, "sent_to": profile.email}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error emailing report: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+
 @router.get("/{user_id}/{report_id}/chat-welcome")
 def report_chat_welcome(user_id: str, report_id: str):
     """

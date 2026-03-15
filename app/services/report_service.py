@@ -119,3 +119,42 @@ class ReportService:
         deleted = c.rowcount > 0
         conn.close()
         return deleted
+
+    def send_report_email(self, to_email: str, report_content: str, generated_at: str) -> None:
+        """
+        Sends a report via SMTP using settings from config.
+        Raises an exception if delivery fails.
+        """
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        date_label = generated_at[:10] if generated_at else "Today"
+        subject = f"MemoryVest Portfolio Insight — {date_label}"
+
+        html_body = f"""
+        <html><body style="font-family: Arial, sans-serif; max-width: 700px; margin: auto; color: #e2e8f0; background: #0f1115; padding: 2rem;">
+            <h2 style="color: #60a5fa;">📊 MemoryVest Portfolio Report</h2>
+            <p style="color: #94a3b8; font-size: 0.9rem;">Generated on {date_label}</p>
+            <hr style="border-color: #1e293b; margin: 1.5rem 0;" />
+            <div style="line-height: 1.7;">{report_content}</div>
+            <hr style="border-color: #1e293b; margin: 1.5rem 0;" />
+            <p style="color: #475569; font-size: 0.8rem;">Sent by MemoryVest · Your AI Investing Companion</p>
+        </body></html>
+        """
+
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = settings.sender_email
+        msg["To"] = to_email
+        msg.attach(MIMEText(html_body, "html"))
+
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
+            server.ehlo()
+            if settings.smtp_port != 25:
+                server.starttls()
+            if settings.smtp_user and settings.smtp_pass:
+                server.login(settings.smtp_user, settings.smtp_pass)
+            server.sendmail(settings.sender_email, to_email, msg.as_string())
+            logging.info(f"Report email sent to {to_email}")
+
