@@ -37,7 +37,11 @@ class EverMemOSClient:
 
     def search_memories(self, query: str, user_id: str, memory_types: List[str] = None, retrieve_method: str = "hybrid", top_k: int = 10) -> Dict[str, Any]:
         if memory_types is None:
-            memory_types = ["episodic_memory", "foresight", "event_log"]
+            # Cloud EverMemOS API only supports 'profile' and 'episodic_memory'
+            if settings.evermemos_api_key:
+                memory_types = ["episodic_memory"]
+            else:
+                memory_types = ["episodic_memory", "foresight", "event_log"]
 
         payload = {
             "query": query,
