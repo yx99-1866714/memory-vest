@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User } from 'lucide-react';
 import './Chat.css';
+import API_BASE from '../config.js';
 
 // Module-level store — survives component unmount/remount
 // Keeps in-flight AI reply promises alive even when the user navigates away
@@ -48,7 +49,7 @@ export default function Chat({ userId }) {
     if (messages.length === 1 && messages[0].text === "Loading your welcome summary...") {
       const fetchWelcome = async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/chat/welcome/${userId}`);
+          const response = await fetch(`${API_BASE}/api/chat/welcome/${userId}`);
           if (response.ok) {
             const data = await response.json();
             if (mountedRef.current) {
@@ -96,7 +97,7 @@ export default function Chat({ userId }) {
     setInputValue('');
     setIsTyping(true);
 
-    const replyPromise = fetch(`http://localhost:8000/api/chat/${userId}`, {
+    const replyPromise = fetch(`${API_BASE}/api/chat/${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userText })

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Target, Sparkles, X } from 'lucide-react';
 import './ActionItems.css';
+import API_BASE from '../config.js';
 
 // Module-level singleton — survives component unmount/remount
 // This prevents duplicate sync requests when rapidly switching tabs
@@ -21,7 +22,7 @@ export default function ActionItems({ userId }) {
     const loadAndSync = async () => {
       // Phase 1: Always load stored items instantly from DB
       try {
-        const res = await fetch(`http://localhost:8000/api/portfolio/${userId}/action-items`);
+        const res = await fetch(`${API_BASE}/api/portfolio/${userId}/action-items`);
         if (mountedRef.current && res.ok) {
           const data = await res.json();
           setItems(data.action_items || []);
@@ -49,7 +50,7 @@ export default function ActionItems({ userId }) {
       // Start a new sync and register the promise so other mounts can subscribe to it
       if (mountedRef.current) setIsSyncing(true);
 
-      const syncPromise = fetch(`http://localhost:8000/api/portfolio/${userId}/action-items/sync`, {
+      const syncPromise = fetch(`${API_BASE}/api/portfolio/${userId}/action-items/sync`, {
         method: 'POST',
       }).then(async res => {
         if (!res.ok) return [];
@@ -85,7 +86,7 @@ export default function ActionItems({ userId }) {
     setItems(prev => prev.filter(i => i !== item));
     if (item.id && typeof item.id === 'number') {
       try {
-        await fetch(`http://localhost:8000/api/portfolio/${userId}/action-items/${item.id}`, {
+        await fetch(`${API_BASE}/api/portfolio/${userId}/action-items/${item.id}`, {
           method: 'DELETE',
         });
       } catch (err) {

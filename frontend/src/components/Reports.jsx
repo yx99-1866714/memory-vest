@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import { FileText, Calendar, Loader, Clock, Inbox, Sparkles, Trash2, Bot, User, Send } from 'lucide-react';
 import './Reports.css';
+import API_BASE from '../config.js';
 
 // Module-level singleton — keeps generation alive across tab switches
 const generationState = {}; // { [userId]: Promise<report> | null }
@@ -34,7 +35,7 @@ function ReportChatPanel({ userId, report }) {
 
     const fetchWelcome = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/reports/${userId}/${report.report_id}/chat-welcome`);
+        const res = await fetch(`${API_BASE}/api/reports/${userId}/${report.report_id}/chat-welcome`);
         if (res.ok && mountedRef.current) {
           const data = await res.json();
           setChatMessages([{ role: 'assistant', text: data.message }]);
@@ -57,7 +58,7 @@ function ReportChatPanel({ userId, report }) {
     setChatLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:8000/api/reports/${userId}/chat`, {
+      const res = await fetch(`${API_BASE}/api/reports/${userId}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -137,7 +138,7 @@ export default function Reports({ userId }) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`http://localhost:8000/api/reports/${userId}`);
+      const res = await fetch(`${API_BASE}/api/reports/${userId}`);
       if (res.ok) {
         const data = await res.json();
         if (mountedRef.current) {
@@ -174,7 +175,7 @@ export default function Reports({ userId }) {
     if (generationState[userId]) return;
     if (mountedRef.current) setIsGenerating(true);
 
-    const genPromise = fetch(`http://localhost:8000/api/reports/${userId}/generate`, {
+    const genPromise = fetch(`${API_BASE}/api/reports/${userId}/generate`, {
       method: 'POST'
     }).then(async res => {
       if (!res.ok) { console.error("Report generation failed"); return null; }
@@ -198,7 +199,7 @@ export default function Reports({ userId }) {
     setReports(prev => prev.filter(r => r.report_id !== report.report_id));
     if (selectedReport?.report_id === report.report_id) setSelectedReport(null);
     try {
-      await fetch(`http://localhost:8000/api/reports/${userId}/${report.report_id}`, { method: 'DELETE' });
+      await fetch(`${API_BASE}/api/reports/${userId}/${report.report_id}`, { method: 'DELETE' });
     } catch (err) {
       console.error("Failed to delete report:", err);
       fetchReports(false);

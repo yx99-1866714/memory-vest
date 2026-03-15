@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UploadCloud, TrendingUp, DollarSign, Briefcase, Edit2, Trash2, Check, X, Sparkles, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import './Dashboard.css';
+import API_BASE from '../config.js';
 
 export default function Dashboard({ userId }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -24,7 +25,7 @@ export default function Dashboard({ userId }) {
   // New API fetch function for initial load
   const loadPositions = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/portfolio/${userId}/positions`);
+      const response = await fetch(`${API_BASE}/api/portfolio/${userId}/positions`);
       if (response.ok) {
         const data = await response.json();
         setPositions(data);
@@ -36,7 +37,7 @@ export default function Dashboard({ userId }) {
 
   const loadCashBalance = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/portfolio/${userId}/cash`);
+      const response = await fetch(`${API_BASE}/api/portfolio/${userId}/cash`);
       if (response.ok) {
         const data = await response.json();
         setAvailableCash(data.available_cash);
@@ -54,7 +55,7 @@ export default function Dashboard({ userId }) {
   
   const fetchPrice = async (ticker) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/market/price/${ticker}`);
+      const response = await fetch(`${API_BASE}/api/market/price/${ticker}`);
       if (response.ok) {
         const data = await response.json();
         return data.currentPrice;
@@ -110,7 +111,7 @@ export default function Dashboard({ userId }) {
     const fetchAiReview = async () => {
       setIsLoadingReview(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/portfolio/${userId}/review`);
+        const response = await fetch(`${API_BASE}/api/portfolio/${userId}/review`);
         if (response.ok) {
           const data = await response.json();
           setAiReview(data.review);
@@ -183,7 +184,7 @@ export default function Dashboard({ userId }) {
         formData.append("file", file);
         formData.append("overwrite", overwriteHoldings);
 
-        const res = await fetch(`http://localhost:8000/api/portfolio/${userId}/positions/upload`, {
+        const res = await fetch(`${API_BASE}/api/portfolio/${userId}/positions/upload`, {
           method: 'POST',
           body: formData
         });
@@ -224,7 +225,7 @@ export default function Dashboard({ userId }) {
     const newCash = parseFloat(cashInputValue);
     if (!isNaN(newCash) && newCash >= 0) {
       try {
-        const res = await fetch(`http://localhost:8000/api/portfolio/${userId}/cash`, {
+        const res = await fetch(`${API_BASE}/api/portfolio/${userId}/cash`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ available_cash: newCash })
@@ -268,7 +269,7 @@ export default function Dashboard({ userId }) {
 
   const handleSaveClick = async (pos) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/portfolio/${userId}/positions/${pos.ticker}`, {
+      const res = await fetch(`${API_BASE}/api/portfolio/${userId}/positions/${pos.ticker}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -295,7 +296,7 @@ export default function Dashboard({ userId }) {
 
   const handleDeleteClick = async (pos) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/portfolio/${userId}/positions/${pos.ticker}`, {
+      const res = await fetch(`${API_BASE}/api/portfolio/${userId}/positions/${pos.ticker}`, {
         method: 'DELETE'
       });
       if (res.ok) {

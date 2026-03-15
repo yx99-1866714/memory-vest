@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE from '../config.js';
 import { Mail, ArrowRight } from 'lucide-react';
 import './Login.css';
 
@@ -17,7 +18,7 @@ export default function Login({ onLogin }) {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:8000/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })

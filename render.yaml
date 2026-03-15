@@ -1,0 +1,47 @@
+services:
+  # ── Backend (FastAPI) ─────────────────────────────────────────────────────────
+  - type: web
+    name: memoryvest-api
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -c "from app.infra.db import init_db; init_db()" && uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: EVERMEMOS_API_URL
+        sync: false          # Set manually in Render dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: openai/gpt-4o-mini
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: DB_PATH
+        value: /data/memoryvest.db  # Persistent disk mount path
+    disk:
+      name: memoryvest-data
+      mountPath: /data
+      sizeGB: 1
+
+  # ── Frontend (Vite/React) ─────────────────────────────────────────────────────
+  - type: web
+    name: memoryvest-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html   # SPA fallback routing

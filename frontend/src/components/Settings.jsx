@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Info, Save, Mail, BarChart2, Shield, Settings2, Clock } from 'lucide-react';
 import './Settings.css';
+import API_BASE from '../config.js';
 
 export default function Settings({ userId }) {
   const [profile, setProfile] = useState({
@@ -14,7 +15,7 @@ export default function Settings({ userId }) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/profile/${userId}`);
+      const response = await fetch(`${API_BASE}/api/profile/${userId}`);
         if (response.ok) {
           const data = await response.json();
           setProfile(data);
@@ -33,7 +34,7 @@ export default function Settings({ userId }) {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:8000/api/profile/${userId}`, {
+      const response = await fetch(`${API_BASE}/api/profile/${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
