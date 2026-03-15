@@ -107,3 +107,15 @@ class ReportService:
             results.append(ReportHistory(**d))
             
         return results
+
+    def delete_report(self, user_id: str, report_id: str) -> bool:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute(
+            "DELETE FROM report_history WHERE report_id = ? AND user_id = ?",
+            (report_id, user_id)
+        )
+        conn.commit()
+        deleted = c.rowcount > 0
+        conn.close()
+        return deleted
