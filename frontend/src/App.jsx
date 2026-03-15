@@ -19,6 +19,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem(`chat_messages_${userId}`);
     Cookies.remove('memoryvest_user_id');
     setUserId(null);
   };

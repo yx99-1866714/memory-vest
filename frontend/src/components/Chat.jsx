@@ -8,8 +8,9 @@ import API_BASE from '../config.js';
 const pendingReply = {}; // { [userId]: Promise<{id, role, text}> | null }
 
 export default function Chat({ userId }) {
+  const storageKey = `chat_messages_${userId}`;
   const [messages, setMessages] = useState(() => {
-    const saved = sessionStorage.getItem('chat_messages');
+    const saved = sessionStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -39,7 +40,7 @@ export default function Chat({ userId }) {
   // Persist messages to sessionStorage whenever they change
   useEffect(() => {
     if (messages.length > 0 && messages[0].text !== "Loading your welcome summary...") {
-      sessionStorage.setItem('chat_messages', JSON.stringify(messages));
+      sessionStorage.setItem(storageKey, JSON.stringify(messages));
     }
   }, [messages]);
 
