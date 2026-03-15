@@ -3,6 +3,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     evermemos_api_url: str = "http://localhost:1995/api/v1"
+    evermemos_api_key: Optional[str] = None  # Bearer token for hosted EverMemOS
     db_path: str = "memoryvest.db"
     openrouter_api_key: Optional[str] = None
     llm_model: str = "openai/gpt-5.4" # Or "x-ai/grok-4"
