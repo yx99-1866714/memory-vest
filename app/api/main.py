@@ -1,6 +1,8 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from pathlib import Path
 
 from app.config import settings
 from app.api.routers import market, profile, chat, portfolio, auth, reports
@@ -14,7 +16,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="MemoryVest Dedicated Market API")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure the DB directory exists (important when using a Render persistent disk)
+    db_dir = Path(settings.db_path).parent
+    db_dir.mkdir(parents=True, exist_ok=True)
+    from app.infra.db import init_db
+    init_db()
+    logger.info(f"Database initialised at {settings.db_path}")
+    yield
+
+app = FastAPI(title="MemoryVest Dedicated Market API", lifespan=lifespan)
 
 # Setup CORS to allow the Vite frontend (which usually runs on localhost:5173) requests
 app.add_middleware(
