@@ -6,6 +6,7 @@ A Modern, Beginner-Friendly Investing Companion
 MemoryVest is a full-stack investing companion that uses EverMemOS as its long-term memory layer to securely track your investment profile, portfolio holdings, and future interests. It features a modern React dashboard and a conversational AI assistant that automatically updates your portfolio and settings as you chat.
 
 Try it here: https://memory-vest.onrender.com/
+Video Demo link: https://youtu.be/hU5aIhW06dg
 ## Features
 
 - **Conversational Memory**: Uses an LLM agent with EverMemOS to dynamically learn your preferences, risk tolerance, and interests over time.
